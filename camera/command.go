@@ -1,27 +1,51 @@
 package camera
 
-type Command struct {
-	Action CameraAction
+type Command interface {
+	Type() CommandType
 }
 
-type CameraAction int
+type CommandType int
 
 const (
-	EmptyAction CameraAction = iota
-	PanLeftAction
-	PanRightAction
-	PanStopAction
-	TiltUpAction
-	TiltDownAction
-	TiltStopAction
-	ZoomInAction
-	ZoomOutAction
-	ZoomStopAction
+	EmptyCommandType CommandType = iota
+	PTZMoveCommandType
+	PTZPresetCommandType
 )
 
-func (a CameraAction) String() string {
-	return [...]string{
-		"EmptyAction", "PanLeftAction", "PanRightAction", "PanStopAction", "TiltUpAction", "TiltDownAction", "TiltStopAction",
-		"ZoomInAction", "ZoomOutAction", "ZoomStopAction",
-	}[a]
+func (a CommandType) String() string {
+	return [...]string{"EmptyCommandType", "PTZMoveCommandType", "PTZPresetCommandType"}[a]
+}
+
+type PTZMoveCommand struct {
+	PanMove  int
+	TiltMove int
+	ZoomMove int
+}
+
+func NewPTZMoveCommand(PanMove, TiltMove, ZoomMove int) *PTZMoveCommand {
+	return &PTZMoveCommand{
+		PanMove:  PanMove,
+		TiltMove: TiltMove,
+		ZoomMove: ZoomMove,
+	}
+}
+
+func (c *PTZMoveCommand) Type() CommandType {
+	return PTZMoveCommandType
+}
+
+type PTZPresetCommand struct {
+	SetPreset    bool
+	PresetNumber uint
+}
+
+func NewPTZPresetCommand(setPreset bool, PresetNumber uint) *PTZPresetCommand {
+	return &PTZPresetCommand{
+		SetPreset:    setPreset,
+		PresetNumber: PresetNumber,
+	}
+}
+
+func (c *PTZPresetCommand) Type() CommandType {
+	return PTZPresetCommandType
 }

@@ -70,26 +70,32 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
 		}
 	}
 
-	var panCommand camera.Command
 	_, leftArrowPressed := pressedKeys[LeftArrowKeyboard]
 	_, rightArrowPressed := pressedKeys[RightArrowKeyboard]
+	panMove := 0
 	if leftArrowPressed && !rightArrowPressed {
-		panCommand.Action = camera.PanLeftAction
-	} else if rightArrowPressed && !leftArrowPressed {
-		panCommand.Action = camera.PanRightAction
-	} else {
-		panCommand.Action = camera.PanStopAction
+		panMove = -1
+	} else if !leftArrowPressed && rightArrowPressed {
+		panMove = +1
 	}
 
-	var tiltCommand camera.Command
 	_, upArrowPressed := pressedKeys[UpArrowKeyboard]
 	_, downArrowPressed := pressedKeys[DownArrowKeyboard]
-	if upArrowPressed && !downArrowPressed {
-		tiltCommand.Action = camera.TiltUpAction
-	} else if downArrowPressed && !upArrowPressed {
-		tiltCommand.Action = camera.TiltDownAction
-	} else {
-		tiltCommand.Action = camera.TiltStopAction
+	tiltMove := 0
+	if downArrowPressed && !upArrowPressed {
+		tiltMove = -1
+	} else if !downArrowPressed && upArrowPressed {
+		tiltMove = +1
 	}
-	return []camera.Command{panCommand, tiltCommand}
+
+	_, minusNumLockKeyboardPressed := pressedKeys[MinusNumLockKeyboard]
+	_, plusNumLockKeyboardPressed := pressedKeys[PlusNumLockKeyboard]
+	zoomMove := 0
+	if minusNumLockKeyboardPressed && !plusNumLockKeyboardPressed {
+		zoomMove = -1
+	} else if !minusNumLockKeyboardPressed && plusNumLockKeyboardPressed {
+		zoomMove = +1
+	}
+
+	return []camera.Command{camera.NewPTZMoveCommand(panMove, tiltMove, zoomMove)}
 }
