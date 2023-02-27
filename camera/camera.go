@@ -16,7 +16,7 @@ import (
 )
 
 type Camera struct {
-	ptzParam     CameraPTZParam
+	ptzParam     *CameraPTZParam
 	dev          *onvif.Device
 	profileToken onvifTypes.ReferenceToken
 }
@@ -35,6 +35,11 @@ func NewCamera(deviceParams onvif.DeviceParams) (*Camera, error) {
 	return &Camera{
 		dev:          dev,
 		profileToken: profileToken,
+		ptzParam: &CameraPTZParam{
+			PanSpeed:  0.5,
+			TiltSpeed: 0.5,
+			ZoomSpeed: 0.5,
+		},
 	}, nil
 }
 
@@ -64,7 +69,7 @@ func getDeviceProfileToken(dev *onvif.Device) (onvifTypes.ReferenceToken, error)
 
 func (c *Camera) ExecuteCommands(commands ...Command) error {
 	for _, command := range commands {
-		err := c.ExecuteCommands(command)
+		err := c.ExecuteCommand(command)
 		if err != nil {
 			return err
 		}
@@ -112,11 +117,11 @@ func (c *Camera) ptzContiniousMove() error {
 		ProfileToken: c.profileToken,
 		Velocity: onvifTypes.PTZSpeed{
 			PanTilt: onvifTypes.Vector2D{
-				X: float64(c.ptzParam.PanMove) * float64(c.ptzParam.PanSpeed),
-				Y: float64(c.ptzParam.TiltMove) * float64(c.ptzParam.TiltSpeed),
+				X: float64(c.ptzParam.PanMove) * c.ptzParam.PanSpeed,
+				Y: float64(c.ptzParam.TiltMove) * c.ptzParam.TiltSpeed,
 			},
 			Zoom: onvifTypes.Vector1D{
-				X: float64(c.ptzParam.ZoomMove) * float64(c.ptzParam.ZoomSpeed),
+				X: float64(c.ptzParam.ZoomMove) * c.ptzParam.ZoomSpeed,
 			},
 		},
 	}
@@ -135,11 +140,11 @@ func (c *Camera) ptzGoToPreset(presetToken uint) error {
 		PresetToken:  onvifTypes.ReferenceToken(string(presetToken)),
 		Speed: onvifTypes.PTZSpeed{
 			PanTilt: onvifTypes.Vector2D{
-				X: float64(c.ptzParam.PanSpeed),
-				Y: float64(c.ptzParam.TiltSpeed),
+				X: c.ptzParam.PanSpeed,
+				Y: c.ptzParam.TiltSpeed,
 			},
 			Zoom: onvifTypes.Vector1D{
-				X: float64(c.ptzParam.ZoomSpeed),
+				X: c.ptzParam.ZoomSpeed,
 			},
 		},
 	}
@@ -172,9 +177,9 @@ type CameraPTZParam struct {
 	TiltMove int
 	ZoomMove int
 
-	PanSpeed  uint
-	TiltSpeed uint
-	ZoomSpeed uint
+	PanSpeed  float64
+	TiltSpeed float64
+	ZoomSpeed float64
 }
 
 func (p *CameraPTZParam) UpdateMoveParam(newP *CameraPTZParam) bool {

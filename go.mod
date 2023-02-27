@@ -2,7 +2,9 @@ module github.com/Zeryoshka/camera-adapter
 
 go 1.19
 
+
 require (
+	github.com/gin-gonic/gin v1.9.0
 	github.com/karalabe/hid v1.0.0
 	github.com/use-go/onvif v0.0.9
 )
@@ -23,6 +25,7 @@ require (
 	github.com/juju/errors v0.0.0-20220331221717-b38fca44723b // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.2 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
