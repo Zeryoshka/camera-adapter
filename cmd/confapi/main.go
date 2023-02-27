@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
+	"github.com/Zeryoshka/camera-adapter/confapi"
 	"github.com/gin-gonic/gin"
-	"githubb.com/Zeryoshka/camera-adapter/confapi"
 )
 
 func main() {
