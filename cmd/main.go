@@ -1,18 +1,23 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/Zeryoshka/camera-adapter/camera"
+	"github.com/Zeryoshka/camera-adapter/confstore"
 	"github.com/Zeryoshka/camera-adapter/reader"
 	"github.com/use-go/onvif"
 )
 
 func main() {
+	confpath := flag.String("conf", "", "path to local yaml config")
+	store := confstore.NewFileStore(*confpath)
+	camerConf := store.Cameras[0]
 	camera, err := camera.NewCamera(onvif.DeviceParams{
-		Xaddr:    "172.18.191.94:80",
-		Username: "admin",
-		Password: "Supervisor",
+		Xaddr:    camerConf.Host,     //"172.18.191.94:80",
+		Username: camerConf.Login,    //"admin",
+		Password: camerConf.Password, //"Supervisor",
 	})
 	if err != nil {
 		log.Fatalln("Can't create camera, cause: ", err)

@@ -1,0 +1,4 @@
+cameras:
+  - host: 72.18.191.94:80
+    login: admin
+    password: Supervisor
