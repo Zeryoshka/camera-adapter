@@ -59,16 +59,33 @@ const (
 type StatusKeyKeyboardMask byte
 
 const (
-	RightControl StatusKeyKeyboardMask = 0b00000100
+	RightControlKeyboardMask StatusKeyKeyboardMask = 0b00010000
 )
 
+func (r *KeyboardReader) pressedOneOf(pressedKeys map[KeyboardKey]struct{}, wantedKeys ...KeyboardKey) (KeyboardKey, bool) {
+	isFirstFound := false
+	var pressedKey KeyboardKey
+	for _, key := range wantedKeys {
+		if _, found := pressedKeys[key]; found {
+			if isFirstFound {
+				return pressedKey, false
+			}
+			isFirstFound = true
+			pressedKey = key
+		}
+	}
+	return pressedKey, isFirstFound
+}
+
 func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
+	statusKeyByte := inputData[0]
 	pressedKeys := make(map[KeyboardKey]struct{})
 	for _, key := range inputData[2:] {
 		if key > 3 {
 			pressedKeys[KeyboardKey(key)] = struct{}{}
 		}
 	}
+	commands := make([]camera.Command, 0)
 
 	_, leftArrowPressed := pressedKeys[LeftArrowKeyboard]
 	_, rightArrowPressed := pressedKeys[RightArrowKeyboard]
@@ -97,5 +114,18 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
 		zoomMove = +1
 	}
 
-	return []camera.Command{camera.NewPTZMoveCommand(panMove, tiltMove, zoomMove)}
+	commands = append(commands, camera.NewPTZMoveCommand(panMove, tiltMove, zoomMove))
+
+	rightControlPressed := (statusKeyByte & byte(RightControlKeyboardMask)) != 0
+	presetKey, hasPresetCommand := r.pressedOneOf(
+		pressedKeys,
+		OneNumLockKeyboard, TwoNumLockKeyboard, ThreeNumLockKeyboard, FourNumLockKeyboard, FiveNumLockKeyboard,
+		SixNumLockKeyboard, SevenNumLockKeyboard, EightNumLockKeyboard, NineNumLockKeyboard, ZeroNumLockKeyboard,
+	)
+	if hasPresetCommand {
+		pressetNumber := uint(presetKey - OneNumLockKeyboard)
+		commands = append(commands, camera.NewPTZPresetCommand(rightControlPressed, pressetNumber))
+	}
+
+	return commands
 }

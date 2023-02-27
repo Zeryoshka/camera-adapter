@@ -17,6 +17,7 @@ import (
 
 type Camera struct {
 	ptzParam     *CameraPTZParam
+	presetStore  PresetStore
 	dev          *onvif.Device
 	profileToken onvifTypes.ReferenceToken
 }
@@ -40,6 +41,7 @@ func NewCamera(deviceParams onvif.DeviceParams) (*Camera, error) {
 			TiltSpeed: 0.5,
 			ZoomSpeed: 0.5,
 		},
+		presetStore: make(PresetStore),
 	}, nil
 }
 
@@ -96,7 +98,12 @@ func (c *Camera) executePTZMoveCamera(command *PTZMoveCommand) error {
 		ZoomMove: command.ZoomMove,
 	}
 	update := c.ptzParam.UpdateMoveParam(&newParam)
+	log.Println("Camera params: ", c.ptzParam, "updated: ", update)
 	if update {
+		err := c.ptzStop()
+		if err != nil {
+			return err
+		}
 		return c.ptzContiniousMove()
 	}
 	return nil
@@ -109,6 +116,23 @@ func (c *Camera) executePTZPreset(command *PTZPresetCommand) error {
 		}
 		return c.ptzGoToPreset(command.PresetNumber)
 	}
+	return nil
+}
+
+func (c *Camera) ptzStop() error {
+	req := ptz.Stop{
+		ProfileToken: c.profileToken,
+		PanTilt: xsd.Boolean(
+			c.ptzParam.PanMove != 0 || c.ptzParam.TiltMove != 0,
+		),
+		Zoom: xsd.Boolean(c.ptzParam.ZoomMove != 0),
+	}
+	resp, err := c.dev.CallMethod(req)
+	if err != nil {
+		log.Fatalln("Error with Stop request: ", err)
+		return err
+	}
+	log.Println("Gotten ", resp.StatusCode, " Stop")
 	return nil
 }
 
@@ -134,10 +158,15 @@ func (c *Camera) ptzContiniousMove() error {
 	return nil
 }
 
-func (c *Camera) ptzGoToPreset(presetToken uint) error {
+func (c *Camera) ptzGoToPreset(presetNumber uint) error {
+	presetToken, isPresetExist := c.presetStore[presetNumber]
+	if !isPresetExist {
+		log.Println("No preset with number: ", presetNumber)
+		return errors.New(fmt.Sprint("No preset with number: ", presetNumber))
+	}
 	req := ptz.GotoPreset{
 		ProfileToken: c.profileToken,
-		PresetToken:  onvifTypes.ReferenceToken(string(presetToken)),
+		PresetToken:  onvifTypes.ReferenceToken(presetToken),
 		Speed: onvifTypes.PTZSpeed{
 			PanTilt: onvifTypes.Vector2D{
 				X: c.ptzParam.PanSpeed,
@@ -150,25 +179,45 @@ func (c *Camera) ptzGoToPreset(presetToken uint) error {
 	}
 	resp, err := c.dev.CallMethod(req)
 	if err != nil {
-		log.Fatalln("Error with go to preset \"", presetToken, "\" request: ", err)
+		log.Println("Error with go to preset \"", presetToken, "\" request: ", err)
 		return err
 	}
 	log.Println("Gotten ", resp.StatusCode, " while go to preset ", presetToken)
 	return nil
 }
 
-func (c *Camera) ptzSetPreset(presetToken uint) error {
+func (c *Camera) ptzSetPreset(presetNumber uint) error {
+	presetToken, isPresetExist := c.presetStore[presetNumber]
+	if isPresetExist {
+		presetToken = ""
+	}
+
 	req := ptz.SetPreset{
 		ProfileToken: c.profileToken,
-		PresetToken:  onvifTypes.ReferenceToken(string(presetToken)),
-		PresetName:   xsd.String(presetToken),
+		PresetToken:  onvifTypes.ReferenceToken(presetToken),
+		PresetName:   xsd.String(fmt.Sprint(presetNumber)),
 	}
+
 	resp, err := c.dev.CallMethod(req)
 	if err != nil {
 		log.Fatalln("Error with set \"", presetToken, "\" preset request: ", err)
 		return err
 	}
-	log.Println("Gotten ", resp.StatusCode, " while set preset ", presetToken)
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	if !isPresetExist {
+		type Envelope struct {
+			Header struct{}
+			Body   struct {
+				SetPresetResponse ptz.SetPresetResponse
+			}
+		}
+		reply := Envelope{}
+		xml.Unmarshal(body, &reply)
+		c.presetStore[presetNumber] = string(reply.Body.SetPresetResponse.PresetToken)
+	}
+
+	log.Println("Gotten ", resp.StatusCode, " while set preset ", presetNumber)
 	return nil
 }
 
@@ -180,6 +229,10 @@ type CameraPTZParam struct {
 	PanSpeed  float64
 	TiltSpeed float64
 	ZoomSpeed float64
+}
+
+func (p *CameraPTZParam) String() string {
+	return fmt.Sprintf("CameraPTZParam{P:%d; T:%d; Z:%d}", p.PanMove, p.TiltMove, p.ZoomMove)
 }
 
 func (p *CameraPTZParam) UpdateMoveParam(newP *CameraPTZParam) bool {
@@ -194,3 +247,5 @@ func (p *CameraPTZParam) UpdateMoveParam(newP *CameraPTZParam) bool {
 
 	return update
 }
+
+type PresetStore map[uint]string // presetNumber -> token

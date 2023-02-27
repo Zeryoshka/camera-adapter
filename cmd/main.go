@@ -12,6 +12,7 @@ import (
 
 func main() {
 	confpath := flag.String("conf", "", "path to local yaml config")
+	flag.Parse()
 	store := confstore.NewFileStore(*confpath)
 	camerConf := store.Cameras[0]
 	camera, err := camera.NewCamera(onvif.DeviceParams{
