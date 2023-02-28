@@ -123,7 +123,7 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
 		SixNumLockKeyboard, SevenNumLockKeyboard, EightNumLockKeyboard, NineNumLockKeyboard, ZeroNumLockKeyboard,
 	)
 	if hasPresetCommand {
-		pressetNumber := uint(presetKey - OneNumLockKeyboard)
+		pressetNumber := uint(presetKey-OneNumLockKeyboard) + 1
 		commands = append(commands, camera.NewPTZPresetCommand(rightControlPressed, pressetNumber))
 	}
 

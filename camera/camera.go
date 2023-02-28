@@ -179,18 +179,15 @@ func (c *Camera) ptzGoToPreset(presetNumber uint) error {
 	}
 	resp, err := c.dev.CallMethod(req)
 	if err != nil {
-		log.Println("Error with go to preset \"", presetToken, "\" request: ", err)
+		log.Println("Error with GoToPreset \"", presetToken, "\" request: ", err)
 		return err
 	}
-	log.Println("Gotten ", resp.StatusCode, " while go to preset ", presetToken)
+	log.Println("Gotten ", resp.StatusCode, " while GoToPreset (", presetToken, ")")
 	return nil
 }
 
 func (c *Camera) ptzSetPreset(presetNumber uint) error {
-	presetToken, isPresetExist := c.presetStore[presetNumber]
-	if isPresetExist {
-		presetToken = ""
-	}
+	presetToken := c.presetStore[presetNumber]
 
 	req := ptz.SetPreset{
 		ProfileToken: c.profileToken,
@@ -200,24 +197,22 @@ func (c *Camera) ptzSetPreset(presetNumber uint) error {
 
 	resp, err := c.dev.CallMethod(req)
 	if err != nil {
-		log.Fatalln("Error with set \"", presetToken, "\" preset request: ", err)
+		log.Fatalln("Error with SetPreset request: ", err)
 		return err
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	if !isPresetExist {
-		type Envelope struct {
-			Header struct{}
-			Body   struct {
-				SetPresetResponse ptz.SetPresetResponse
-			}
+	type Envelope struct {
+		Header struct{}
+		Body   struct {
+			SetPresetResponse ptz.SetPresetResponse
 		}
-		reply := Envelope{}
-		xml.Unmarshal(body, &reply)
-		c.presetStore[presetNumber] = string(reply.Body.SetPresetResponse.PresetToken)
 	}
+	reply := Envelope{}
+	xml.Unmarshal(body, &reply)
+	c.presetStore[presetNumber] = string(reply.Body.SetPresetResponse.PresetToken)
 
-	log.Println("Gotten ", resp.StatusCode, " while set preset ", presetNumber)
+	log.Println("Gotten ", resp.StatusCode, " while SetPreset(", c.presetStore[presetNumber], ")")
 	return nil
 }
 

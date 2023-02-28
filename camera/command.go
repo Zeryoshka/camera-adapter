@@ -1,7 +1,10 @@
 package camera
 
+import "fmt"
+
 type Command interface {
 	Type() CommandType
+	String() string
 }
 
 type CommandType int
@@ -10,6 +13,7 @@ const (
 	EmptyCommandType CommandType = iota
 	PTZMoveCommandType
 	PTZPresetCommandType
+	SetDeviceCommandType
 )
 
 func (a CommandType) String() string {
@@ -34,6 +38,10 @@ func (c *PTZMoveCommand) Type() CommandType {
 	return PTZMoveCommandType
 }
 
+func (c *PTZMoveCommand) String() string {
+	return fmt.Sprintf("PTZMoveCommand")
+}
+
 type PTZPresetCommand struct {
 	SetPreset    bool
 	PresetNumber uint
@@ -48,4 +56,8 @@ func NewPTZPresetCommand(setPreset bool, PresetNumber uint) *PTZPresetCommand {
 
 func (c *PTZPresetCommand) Type() CommandType {
 	return PTZPresetCommandType
+}
+
+func (c *PTZPresetCommand) String() string {
+	return fmt.Sprintf("PTZPresetCommand(num: %d, set: %t)", c.PresetNumber, c.SetPreset)
 }
