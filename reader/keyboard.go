@@ -38,6 +38,18 @@ func (r *KeyboardReader) GetReadChan() (<-chan []byte, error) {
 type KeyboardKey byte
 
 const (
+	F1Keyboard           KeyboardKey = 58
+	F2Keyboard           KeyboardKey = 59
+	F3Keyboard           KeyboardKey = 60
+	F4Keyboard           KeyboardKey = 61
+	F5Keyboard           KeyboardKey = 62
+	F6Keyboard           KeyboardKey = 63
+	F7Keyboard           KeyboardKey = 64
+	F8Keyboard           KeyboardKey = 65
+	F9Keyboard           KeyboardKey = 66
+	F10Keyboard          KeyboardKey = 67
+	F11Keyboard          KeyboardKey = 68
+	F12Keyboard          KeyboardKey = 69
 	RightArrowKeyboard   KeyboardKey = 79
 	LeftArrowKeyboard    KeyboardKey = 80
 	DownArrowKeyboard    KeyboardKey = 81
@@ -77,7 +89,7 @@ func (r *KeyboardReader) pressedOneOf(pressedKeys map[KeyboardKey]struct{}, want
 	return pressedKey, isFirstFound
 }
 
-func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
+func (r *KeyboardReader) DataToCommands(inputData []byte) ([]camera.Command, []camera.Command) {
 	statusKeyByte := inputData[0]
 	pressedKeys := make(map[KeyboardKey]struct{})
 	for _, key := range inputData[2:] {
@@ -86,6 +98,7 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
 		}
 	}
 	commands := make([]camera.Command, 0)
+	manager_commands := make([]camera.Command, 0)
 
 	_, leftArrowPressed := pressedKeys[LeftArrowKeyboard]
 	_, rightArrowPressed := pressedKeys[RightArrowKeyboard]
@@ -127,5 +140,15 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) []camera.Command {
 		commands = append(commands, camera.NewPTZPresetCommand(rightControlPressed, pressetNumber))
 	}
 
-	return commands
+	changeDeviceKey, hasChangeDevice := r.pressedOneOf(
+		pressedKeys,
+		F1Keyboard, F2Keyboard, F3Keyboard, F4Keyboard, F5Keyboard, F6Keyboard, F7Keyboard,
+		F8Keyboard, F9Keyboard, F10Keyboard, F11Keyboard, F12Keyboard,
+	)
+	if hasChangeDevice {
+		newCameraIndex := int(changeDeviceKey - F1Keyboard)
+		manager_commands = append(manager_commands, camera.NewSetDeviceCommand(newCameraIndex))
+	}
+
+	return manager_commands, commands
 }

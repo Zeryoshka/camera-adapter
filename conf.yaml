@@ -2,3 +2,9 @@ cameras:
   - host: 172.18.191.94:80
     login: admin
     password: Supervisor
+  - host: 172.18.191.179:8080
+    login: admin
+    password: Supervisor
+  - host: 172.18.191.83:80
+    login: admin
+    password: Supervisor
