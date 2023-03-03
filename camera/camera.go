@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 
 	"errors"
 
@@ -66,7 +67,7 @@ func getDeviceProfileToken(dev *onvif.Device) (onvifTypes.ReferenceToken, error)
 		return "", errors.New("No profiles")
 	}
 
-	return profiles[0].Token, nil
+	return profiles[len(profiles)-1].Token, nil
 }
 
 func (c *Camera) ExecuteCommands(commands ...Command) error {
@@ -137,6 +138,7 @@ func (c *Camera) ptzStop() error {
 }
 
 func (c *Camera) ptzContiniousMove() error {
+	log.Println("gg: ", xsd.Duration("").NewDateTime("0", "0", "0", "0", "0", "1"))
 	req := ptz.ContinuousMove{
 		ProfileToken: c.profileToken,
 		Velocity: onvifTypes.PTZSpeed{
@@ -148,6 +150,7 @@ func (c *Camera) ptzContiniousMove() error {
 				X: float64(c.ptzParam.ZoomMove) * c.ptzParam.ZoomSpeed,
 			},
 		},
+		Timeout: xsd.Duration("").NewDateTime("0", "0", "0", "0", "0", "1"),
 	}
 	resp, err := c.dev.CallMethod(req)
 	if err != nil {
@@ -155,6 +158,10 @@ func (c *Camera) ptzContiniousMove() error {
 		return err
 	}
 	log.Println("Gotten ", resp.StatusCode, " ContiniousMove")
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Println("error: ", string(body))
+	}
 	return nil
 }
 
