@@ -14,7 +14,7 @@ type CameraManager struct {
 	cameraIndex int
 }
 
-func NewCameraManager(store *confstore.Store) *CameraManager {
+func NewCameraManager(store *confstore.Config) *CameraManager {
 	log.Println("Start creation camera-manager")
 
 	findFirst := false

@@ -1,6 +1,8 @@
 package reader
 
-import "github.com/Zeryoshka/camera-adapter/camera"
+import (
+	"github.com/Zeryoshka/camera-adapter/camera"
+)
 
 type Reader interface {
 	GetReadChan() (<-chan []byte, error)

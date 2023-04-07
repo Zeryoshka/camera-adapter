@@ -12,11 +12,11 @@ import (
 func main() {
 	confpath := flag.String("conf", "", "path to local yaml config")
 	flag.Parse()
-	store := confstore.NewFileStore(*confpath)
-	manager := camera.NewCameraManager(store)
+	config := confstore.ParseConfigfile(*confpath)
+
+	manager := camera.NewCameraManager(config)
 
 	reader := reader.GetReader()
-
 	inpCh, err := reader.GetReadChan()
 	if err != nil {
 		log.Fatalln("Can't get channel: ", err)
