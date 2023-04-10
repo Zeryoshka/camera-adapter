@@ -1,16 +1,54 @@
 cameras:
-  - host: 172.18.191.94:80
-    login: admin
-    password: Supervisor
-  - host: 172.18.191.179:8080
-    login: admin
-    password: Supervisor
-  - host: 172.18.191.86:80
-    login: admin
-    password: Supervisor
+  # - host: 172.18.191.94:80
+  #   login: admin
+  #   password: Supervisor
+  # - host: 172.18.191.179:8080
+  #   login: admin
+  #   password: Supervisor
+  # - host: 172.18.191.86:80
+  #   use_key: 58
+  #   login: admin
+  #   password: Supervisor
+  # - host: 172.18.191.85:80
+  #   use_key: 59
+  #   login: admin
+  #   password: Supervisor
   # - host: 172.18.191.55:80
   #   login: admin
   #   password: Supervisor
   # - host: 172.18.191.54:80
   #   login: admin
   #   password: Supervisor
+  - host: 192.168.1.185:2000
+    login: admin
+    password: Supervisor
+    use_key: 58
+  - host: 192.168.1.184:80
+    login: admin
+    password: Supervisor
+    use_key: 59
+control_profile:
+  pan_left: 80
+  pan_right: 79
+  tilt_up: 82
+  tilt_down: 81
+  zoom_in: 87
+  zoom_out: 86
+  set_preset: m0b1
+  use_preset: 83
+  presets:
+    - 84
+    - 89
+    - 90
+    - 91
+    - 92
+    - 93
+    - 94
+    - 95
+    - 96
+    - 98
+  choose_camera:
+    - 58
+    - 59
+    - 60
+    - 61

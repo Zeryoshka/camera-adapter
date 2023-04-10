@@ -2,6 +2,7 @@ package reader
 
 import (
 	"github.com/Zeryoshka/camera-adapter/camera"
+	"github.com/Zeryoshka/camera-adapter/confstore"
 )
 
 type Reader interface {
@@ -9,6 +10,6 @@ type Reader interface {
 	DataToCommands([]byte) ([]camera.Command, []camera.Command) // (manager-commands, camera-commands)
 }
 
-func GetReader() Reader {
-	return &KeyboardReader{}
+func GetReader(config *confstore.Config) Reader {
+	return NewKeyboardReader(config)
 }

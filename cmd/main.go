@@ -16,7 +16,7 @@ func main() {
 
 	manager := camera.NewCameraManager(config)
 
-	reader := reader.GetReader()
+	reader := reader.GetReader(config)
 	inpCh, err := reader.GetReadChan()
 	if err != nil {
 		log.Fatalln("Can't get channel: ", err)

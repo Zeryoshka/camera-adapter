@@ -22,19 +22,24 @@ func NewFileStore(confpath string) *Store {
 }
 
 type Camera struct {
-	Host     string
-	Login    string
-	Password string
+	Host      string
+	Login     string
+	Password  string
+	CameraKey string `yaml:"use_key"`
 }
 
 type ControlProfileConfig struct {
-	PanLeftKey  string `yaml:"pan_left_key"`
-	PanRightKey string `yaml:"pan_right_key"`
-	TiltUpKey   string `yaml:"tilt_up_key"`
-	TiltDownKey string `yaml:"tilt_down_key"`
-	ZoomInKey   string `yaml:"zoom_in_key"`
-	ZoomOutKey  string `yaml:"zoom_out_key"`
-	PresetKeys  string `yaml:"preset_keys"`
+	PanLeftKey         string   `yaml:"pan_left"`
+	PanRightKey        string   `yaml:"pan_right"`
+	TiltUpKey          string   `yaml:"tilt_up"`
+	TiltDownKey        string   `yaml:"tilt_down"`
+	ZoomInKey          string   `yaml:"zoom_in"`
+	ZoomOutKey         string   `yaml:"zoom_out"`
+	SetPresetKey       string   `yaml:"set_preset"`
+	UsePresetKey       string   `yaml:"use_preset"`
+	PresetKeys         []string `yaml:"presets"`
+	UseChooseCameraKey string   `yaml:"use_choose_camera"`
+	ChooseCameraKeys   []string `yaml:"choose_camera"`
 }
 
 type Config struct {
@@ -63,9 +68,9 @@ func runConfigReloadListener(confpath string) {
 	if err != nil {
 		log.Fatal("Can't run fsnotify watcher open: ", err)
 	}
-	defer watcher.Close()
 
 	go func() {
+		defer watcher.Close()
 		for {
 			select {
 			case event := <-watcher.Events:
@@ -73,8 +78,11 @@ func runConfigReloadListener(confpath string) {
 					log.Println("modified config, restart MAIN LOOP")
 					os.Exit(0)
 				}
-			case err := <-watcher.Errors:
-				log.Fatalln("File watcher retrun error:", err)
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					log.Fatalln("File watcher retrun error:", err)
+				}
+				log.Println("File watcher retrun non-critical error:", err)
 			}
 		}
 	}()

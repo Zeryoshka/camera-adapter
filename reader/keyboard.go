@@ -15,6 +15,7 @@ type KeyboardProfileKey struct {
 	isModifier bool
 	mask       byte
 	code       byte
+	Line       string
 }
 
 func (k *KeyboardProfileKey) KeyIsPressed(modyByte byte, pressed map[byte]struct{}) bool {
@@ -31,45 +32,111 @@ func NewKeyboardProfileKey(s string) *KeyboardProfileKey {
 		return &KeyboardProfileKey{
 			isModifier: false,
 			code:       byte(keyCode),
+			Line:       s,
 		}
 	}
 
 	if strings.HasPrefix(s, "m") {
 		mask, err := strconv.ParseInt(s[1:], 0, 8)
-		return &KeyboardProfileKey{
-			isModifier: true,
-			mask:       byte(mask),
+		if err == nil {
+			return &KeyboardProfileKey{
+				isModifier: true,
+				mask:       byte(mask),
+				Line:       s,
+			}
 		}
 	}
 
 	return nil
 }
 
+type KeyboardProfileKeyGroup struct {
+	keyProfileMap       map[byte]*KeyboardProfileKey
+	statusKeyProfileMap map[byte]*KeyboardProfileKey
+}
+
+func NewKeyboardProfileKeyGroup(arrS []string) *KeyboardProfileKeyGroup {
+	notNil := false
+	keyProfileMap := make(map[byte]*KeyboardProfileKey)
+	statusKeyProfileMap := make(map[byte]*KeyboardProfileKey)
+	for _, s := range arrS {
+		keyProfile := NewKeyboardProfileKey(s)
+		if keyProfile == nil {
+			continue
+		} else if keyProfile.isModifier {
+			statusKeyProfileMap[keyProfile.mask] = keyProfile
+			notNil = true
+		} else {
+			keyProfileMap[keyProfile.code] = keyProfile
+			notNil = true
+		}
+	}
+	if !notNil {
+		return nil
+	}
+	return &KeyboardProfileKeyGroup{
+		keyProfileMap:       keyProfileMap,
+		statusKeyProfileMap: statusKeyProfileMap,
+	}
+}
+
+func (g *KeyboardProfileKeyGroup) PressedOneKey(
+	statusByte byte, pressed map[byte]struct{},
+) *KeyboardProfileKey {
+	mask := byte(0b1)
+	if statusByte != 0 {
+		for {
+			keyProfile := g.statusKeyProfileMap[mask]
+			if keyProfile != nil && keyProfile.mask == mask {
+				return keyProfile
+			}
+			if mask == 0b10000000 {
+				break
+			}
+			mask <<= 1
+		}
+	}
+	for keyCode := range pressed {
+		keyProfile := g.keyProfileMap[keyCode]
+		if keyProfile != nil {
+			return keyProfile
+		}
+	}
+	return nil
+}
+
 type ControlProfileKeyboard struct {
-	PanLeftKey   *KeyboardProfileKey
-	PanRightKey  *KeyboardProfileKey
-	TiltUpKey    *KeyboardProfileKey
-	TiltDownKey  *KeyboardProfileKey
-	ZoomInKey    *KeyboardProfileKey
-	ZoomOutKey   *KeyboardProfileKey
-	PresetKeys   []*KeyboardProfileKey
-	SetPresetKey *KeyboardProfileKey
-	UsePresetKey *KeyboardProfileKey
+	PanLeftKey         *KeyboardProfileKey
+	PanRightKey        *KeyboardProfileKey
+	TiltUpKey          *KeyboardProfileKey
+	TiltDownKey        *KeyboardProfileKey
+	ZoomInKey          *KeyboardProfileKey
+	ZoomOutKey         *KeyboardProfileKey
+	PresetKeys         *KeyboardProfileKeyGroup
+	SetPresetKey       *KeyboardProfileKey
+	UsePresetKey       *KeyboardProfileKey
+	UseChooseCameraKey *KeyboardProfileKey
+	ChooseCameraKeys   *KeyboardProfileKeyGroup
 }
 
 type KeyboardReader struct {
 	profile *ControlProfileKeyboard
 }
 
-func NewKeyboardReader(config confstore.Config) *KeyboardReader {
+func NewKeyboardReader(config *confstore.Config) *KeyboardReader {
 	configProfile := config.ControlProfile
 	profile := &ControlProfileKeyboard{
-		PanLeftKey:  NewKeyboardProfileKey(configProfile.PanLeftKey),
-		PanRightKey: NewKeyboardProfileKey(configProfile.PanRightKey),
-		TiltUpKey:   NewKeyboardProfileKey(configProfile.TiltDownKey),
-		TiltDownKey: NewKeyboardProfileKey(configProfile.TiltUpKey),
-		ZoomInKey:   NewKeyboardProfileKey(configProfile.ZoomInKey),
-		ZoomOutKey:  NewKeyboardProfileKey(configProfile.ZoomOutKey),
+		PanLeftKey:         NewKeyboardProfileKey(configProfile.PanLeftKey),
+		PanRightKey:        NewKeyboardProfileKey(configProfile.PanRightKey),
+		TiltUpKey:          NewKeyboardProfileKey(configProfile.TiltUpKey),
+		TiltDownKey:        NewKeyboardProfileKey(configProfile.TiltDownKey),
+		ZoomInKey:          NewKeyboardProfileKey(configProfile.ZoomInKey),
+		ZoomOutKey:         NewKeyboardProfileKey(configProfile.ZoomOutKey),
+		PresetKeys:         NewKeyboardProfileKeyGroup(configProfile.PresetKeys),
+		SetPresetKey:       NewKeyboardProfileKey(configProfile.SetPresetKey),
+		UsePresetKey:       NewKeyboardProfileKey(configProfile.UsePresetKey),
+		ChooseCameraKeys:   NewKeyboardProfileKeyGroup(configProfile.ChooseCameraKeys),
+		UseChooseCameraKey: NewKeyboardProfileKey(configProfile.UseChooseCameraKey),
 	}
 	return &KeyboardReader{profile: profile}
 }
@@ -93,7 +160,9 @@ func (r *KeyboardReader) GetReadChan() (<-chan []byte, error) {
 				close(dataChan)
 				return
 			}
-			dataChan <- data
+			if len(dataChan) < 3 {
+				dataChan <- data
+			}
 		}
 	}()
 
@@ -106,7 +175,7 @@ const (
 	RightControlKeyboardMask StatusKeyKeyboardMask = 0b00010000
 )
 
-func (r *KeyboardReader) pressedOneOf(pressedKeys map[KeyboardKey]struct{}, wantedKeys ...KeyboardKey) (KeyboardKey, bool) {
+func (r *KeyboardReader) PressedOneOf(pressedKeys map[KeyboardKey]struct{}, wantedKeys ...KeyboardKey) (KeyboardKey, bool) {
 	isFirstFound := false
 	var pressedKey KeyboardKey
 	for _, key := range wantedKeys {
@@ -132,51 +201,90 @@ func (r *KeyboardReader) DataToCommands(inputData []byte) ([]camera.Command, []c
 	commands := make([]camera.Command, 0)
 	manager_commands := make([]camera.Command, 0)
 
-	panLeftMove := r.profile.PanRightKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	panRightMove := r.profile.PanRightKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	panMove := 0
-	if panLeftMove && !panRightMove {
-		panMove = -1
-	} else if !panRightMove && panRightMove {
-		panMove = +1
+	isLockKbMode := false
+	isUsePreset := true
+	if r.profile.UsePresetKey != nil {
+		isUsePreset = r.profile.UsePresetKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		isLockKbMode = isUsePreset
+	}
+	isChooseCamera := !isLockKbMode
+	if !isLockKbMode && r.profile.UseChooseCameraKey != nil {
+		isChooseCamera = r.profile.UseChooseCameraKey.KeyIsPressed(statusKeyByte, pressedKeys)
 	}
 
-	tiltDownMove := r.profile.TiltDownKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	tiltUpMove := r.profile.TiltUpKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	tiltMove := 0
-	if tiltDownMove && !tiltUpMove {
-		panMove = -1
-	} else if !tiltDownMove && tiltUpMove {
-		panMove = +1
+	// manage PTZ command
+	if !isLockKbMode {
+		panLeftMove := false
+		if r.profile.PanLeftKey != nil {
+			panLeftMove = r.profile.PanLeftKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+		panRightMove := false
+		if r.profile.PanRightKey != nil {
+			panRightMove = r.profile.PanRightKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+		log.Println("DD:", panRightMove)
+
+		panMove := 0
+		if panLeftMove && !panRightMove {
+			panMove = -1
+		} else if !panLeftMove && panRightMove {
+			panMove = +1
+		}
+
+		tiltDownMove := false
+		if r.profile.TiltDownKey != nil {
+			tiltDownMove = r.profile.TiltDownKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+		tiltUpMove := false
+		if r.profile.TiltUpKey != nil {
+			tiltUpMove = r.profile.TiltUpKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+
+		tiltMove := 0
+		if tiltDownMove && !tiltUpMove {
+			tiltMove = -1
+		} else if !tiltDownMove && tiltUpMove {
+			tiltMove = +1
+		}
+
+		zoomOutMove := false
+		if r.profile.ZoomOutKey != nil {
+			zoomOutMove = r.profile.ZoomOutKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+		zoomInMove := false
+		if r.profile.ZoomInKey != nil {
+			zoomInMove = r.profile.ZoomInKey.KeyIsPressed(statusKeyByte, pressedKeys)
+		}
+
+		zoomMove := 0
+		if zoomOutMove && !zoomInMove {
+			zoomMove = -1
+		} else if !zoomOutMove && zoomInMove {
+			zoomMove = +1
+		}
+
+		commands = append(commands, camera.NewPTZMoveCommand(panMove, tiltMove, zoomMove))
 	}
 
-	ZoomInMove := r.profile.TiltDownKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	ZoomOutMove := r.profile.TiltUpKey.KeyIsPressed(statusKeyByte, pressedKeys)
-	zoomMove := 0
-	if ZoomInMove && !ZoomOutMove {
-		zoomMove = -1
-	} else if !ZoomInMove && ZoomOutMove {
-		zoomMove = +1
+	isSetPreset := false
+	if r.profile.SetPresetKey != nil && r.profile.SetPresetKey.KeyIsPressed(statusKeyByte, pressedKeys) {
+		isSetPreset = true
+	}
+	if r.profile.PresetKeys != nil {
+		presetKey := r.profile.PresetKeys.PressedOneKey(statusKeyByte, pressedKeys)
+		if (presetKey != nil) && (isUsePreset || isSetPreset) {
+			pressetNumber := uint(presetKey.code)
+			commands = append(commands, camera.NewPTZPresetCommand(isSetPreset, pressetNumber))
+		}
 	}
 
-	commands = append(commands, camera.NewPTZMoveCommand(panMove, tiltMove, zoomMove))
+	if isChooseCamera {
+		chooseCameraKey := r.profile.ChooseCameraKeys.PressedOneKey(statusKeyByte, pressedKeys)
+		if chooseCameraKey != nil {
+			manager_commands = append(manager_commands, camera.NewSetDeviceCommand(chooseCameraKey.Line))
+		}
+	}
 
-	// rightControlPressed := (statusKeyByte & byte(RightControlKeyboardMask)) != 0
-	// presetKey, hasPresetCommand := r.pressedOneOf(
-	// 	pressedKeys,
-	// 	OneNumLockKeyboard, TwoNumLockKeyboard, ThreeNumLockKeyboard, FourNumLockKeyboard, FiveNumLockKeyboard,
-	// 	SixNumLockKeyboard, SevenNumLockKeyboard, EightNumLockKeyboard, NineNumLockKeyboard, ZeroNumLockKeyboard,
-	// )
-	// if hasPresetCommand {
-	// 	pressetNumber := uint(presetKey-OneNumLockKeyboard) + 1
-	// 	commands = append(commands, camera.NewPTZPresetCommand(rightControlPressed, pressetNumber))
-	// }
-
-	// changeDeviceKey, hasChangeDevice := r.pressedOneOf(
-	// 	pressedKeys,
-	// 	F1Keyboard, F2Keyboard, F3Keyboard, F4Keyboard, F5Keyboard, F6Keyboard, F7Keyboard,
-	// 	F8Keyboard, F9Keyboard, F10Keyboard, F11Keyboard, F12Keyboard,
-	// )
 	// if hasChangeDevice {
 	// 	newCameraIndex := int(changeDeviceKey - F1Keyboard)
 	// 	manager_commands = append(manager_commands, camera.NewSetDeviceCommand(newCameraIndex))

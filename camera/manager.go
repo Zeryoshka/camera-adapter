@@ -10,17 +10,17 @@ import (
 )
 
 type CameraManager struct {
-	cameras     map[int]*Camera
-	cameraIndex int
+	cameras   map[string]*Camera
+	cameraKey string
 }
 
 func NewCameraManager(store *confstore.Config) *CameraManager {
 	log.Println("Start creation camera-manager")
 
 	findFirst := false
-	startIndex := 0
-	cameras := make(map[int]*Camera)
-	for index, cameraConf := range store.Cameras {
+	startKey := ""
+	cameras := make(map[string]*Camera)
+	for _, cameraConf := range store.Cameras {
 		camera, err := NewCamera(onvif.DeviceParams{
 			Xaddr:    cameraConf.Host,
 			Username: cameraConf.Login,
@@ -30,9 +30,9 @@ func NewCameraManager(store *confstore.Config) *CameraManager {
 			log.Println("Can't create camera with host:", cameraConf.Host, ", cause: ", err)
 		} else if !findFirst {
 			findFirst = true
-			startIndex = index
+			startKey = cameraConf.CameraKey
 		}
-		cameras[index] = camera
+		cameras[cameraConf.CameraKey] = camera
 	}
 
 	if !findFirst {
@@ -40,14 +40,14 @@ func NewCameraManager(store *confstore.Config) *CameraManager {
 	}
 	log.Println("Init ", len(cameras), " cameras for camera-manager")
 	return &CameraManager{
-		cameras:     cameras,
-		cameraIndex: startIndex,
+		cameras:   cameras,
+		cameraKey: startKey,
 	}
 }
 
 func (m *CameraManager) GetCamera() *Camera {
-	log.Println("Use camera with cameraIndex: ", m.cameraIndex)
-	return m.cameras[m.cameraIndex]
+	log.Println("Use camera with cameraIndex: ", m.cameraKey)
+	return m.cameras[m.cameraKey]
 }
 
 func (m *CameraManager) ExecuteCommands(commands ...Command) error {
@@ -69,24 +69,24 @@ func (m *CameraManager) ExecuteCommand(command Command) error {
 }
 
 func (m *CameraManager) executeSetDeviceCommand(command *SetDeviceCommand) error {
-	if cameraPtr, ok := m.cameras[command.CameraIndex]; !ok || cameraPtr == nil {
-		return fmt.Errorf("incorrect CameraIndex(%d) in SetDeviceCommand or inactive camera", command.CameraIndex)
+	if cameraPtr, ok := m.cameras[command.CameraKey]; !ok || cameraPtr == nil {
+		return fmt.Errorf("incorrect CameraIndex(%s) in SetDeviceCommand or inactive camera", command.CameraKey)
 	}
-	m.cameraIndex = command.CameraIndex
-	log.Println("Executed command: ", command, " new index updated, cameraIndex: ", m.cameraIndex)
+	m.cameraKey = command.CameraKey
+	log.Println("Executed command: ", command, " new index updated, cameraIndex: ", m.cameraKey)
 	return nil
 }
 
 type SetDeviceCommand struct {
-	CameraIndex int
+	CameraKey string
 }
 
 func (c *SetDeviceCommand) String() string {
-	return fmt.Sprintf("SetDeviceCommand(index: %d)", c.CameraIndex)
+	return fmt.Sprintf("SetDeviceCommand(key: %s)", c.CameraKey)
 }
 
-func NewSetDeviceCommand(cameraIndex int) *SetDeviceCommand {
-	return &SetDeviceCommand{CameraIndex: cameraIndex}
+func NewSetDeviceCommand(cameraKey string) *SetDeviceCommand {
+	return &SetDeviceCommand{CameraKey: cameraKey}
 }
 
 func (c *SetDeviceCommand) Type() CommandType {
