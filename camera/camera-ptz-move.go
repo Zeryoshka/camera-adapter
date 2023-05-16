@@ -83,6 +83,12 @@ func (p *CameraPTZParam) String() string {
 	return fmt.Sprintf("CameraPTZParam{P:%d; T:%d; Z:%d}", p.PanMove, p.TiltMove, p.ZoomMove)
 }
 
+func (p *CameraPTZParam) ToDefault() {
+	p.PanMove = 0
+	p.TiltMove = 0
+	p.ZoomMove = 0
+}
+
 func (p *CameraPTZParam) UpdateMoveParam(newP *CameraPTZParam) bool {
 	updated := (p.PanMove != newP.PanMove) || (p.TiltMove != newP.TiltMove) || (p.ZoomMove != newP.ZoomMove)
 

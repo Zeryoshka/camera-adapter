@@ -60,10 +60,18 @@ func (m *CameraManager) ExecuteCommand(command Command) error {
 }
 
 func (m *CameraManager) executeSetDeviceCommand(command *SetDeviceCommand) error {
+	if m.curCameraIndex != command.CameraIndex {
+		log.Printf("Nothing to switch in SetDevice(%d)", m.curCameraIndex)
+		return nil
+	}
 	if cameraPtr, ok := m.cameras[command.CameraIndex]; !ok || cameraPtr == nil {
 		return fmt.Errorf("incorrect CameraIndex(%d) in SetDeviceCommand or inactive camera", command.CameraIndex)
 	}
+	err := m.cameras[m.curCameraIndex].Stop()
 	m.curCameraIndex = command.CameraIndex
 	log.Println("Executed command: ", command, " new index updated, cameraIndex: ", m.curCameraIndex)
+	if err != nil {
+		log.Println("Can't stop previos camera cause: ", err)
+	}
 	return nil
 }

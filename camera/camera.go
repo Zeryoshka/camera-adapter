@@ -44,6 +44,11 @@ type Camera struct {
 	profileToken onvifTypes.ReferenceToken
 }
 
+func (c *Camera) Stop() error {
+	c.ptzParam.ToDefault()
+	return c.ptzStop()
+}
+
 func (c *Camera) ExecuteCommand(command Command) error {
 	if command.Type() == PTZMoveCommandType {
 		ptzMoveCommand := command.(*PTZMoveCommand)
