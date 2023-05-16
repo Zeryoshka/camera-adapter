@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/use-go/onvif/ptz"
 	"github.com/use-go/onvif/xsd"
@@ -75,11 +76,24 @@ type PresetStore map[uint]string // presetNumber -> token
 
 func (c *Camera) initPresetStore() error {
 	resp, err := c.dev.CallMethod(ptz.GetPresets{ProfileToken: c.profileToken})
-	if resp != nil {
+	if err != nil {
 		log.Println("Error while getting presets: ", err)
 		return err
 	}
-	presets := ptz.GetPresetsResponse{}
-	parseSOAPResp(resp, &presets)
+
+	getPresetsResp := ptz.GetPresetsResponse{}
+	parseSOAPResp(resp, &getPresetsResp)
+	// error in lib Preset -> []Preset
+
+	c.presetStore = make(PresetStore)
+	presetCount := 0
+	for _, preset := range getPresetsResp.Preset {
+		val, err := strconv.ParseInt(string(preset.Name), 10, 64)
+		if err == nil {
+			c.presetStore[uint(val)] = string(preset.Token)
+			presetCount++
+		}
+	}
+	log.Printf("Parsed %d presets", presetCount)
 	return nil
 }

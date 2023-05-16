@@ -58,7 +58,7 @@ func ParseConfigfile(confpath string) *Config {
 	if err != nil {
 		log.Fatalln("Can't read configfile, cause: ", err)
 	}
-	runConfigReloadListener(confpath)
+	// runConfigReloadListener(confpath)
 	return &t
 }
 

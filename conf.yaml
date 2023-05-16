@@ -1,10 +1,10 @@
 cameras:
-  # - host: 172.18.191.94:80
-  #   login: admin
-  #   password: Supervisor
-  # - host: 172.18.191.179:8080
-  #   login: admin
-  #   password: Supervisor
+  - host: 172.18.191.94:80
+    login: admin
+    password: Supervisor
+  - host: 172.18.191.179:8080
+    login: admin
+    password: Supervisor
   # - host: 172.18.191.86:80
   #   use_key: 58
   #   login: admin
@@ -19,14 +19,14 @@ cameras:
   # - host: 172.18.191.54:80
   #   login: admin
   #   password: Supervisor
-  - host: 192.168.1.185:2000
-    login: admin
-    password: Supervisor
-    use_key: 58
-  - host: 192.168.1.184:80
-    login: admin
-    password: Supervisor
-    use_key: 59
+  # - host: 192.168.1.185:2000
+  #   login: admin
+  #   password: Supervisor
+  #   use_key: 58
+  # - host: 192.168.1.184:80
+  #   login: admin
+  #   password: Supervisor
+  #   use_key: 59
 control_profile:
   pan_left: 80
   pan_right: 79

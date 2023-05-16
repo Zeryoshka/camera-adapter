@@ -52,8 +52,8 @@ func (g *KeyboardProfileKeyGroup) PressedOneKey(
 		}
 	}
 	for keyCode := range pressed {
-		keyTuple := g.keyProfileMap[keyCode]
-		if keyTuple.key != nil {
+		keyTuple, ok := g.keyProfileMap[keyCode]
+		if ok && keyTuple.key != nil {
 			return keyTuple.key, keyTuple.index
 		}
 	}

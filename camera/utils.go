@@ -4,10 +4,12 @@ import (
 	"encoding/xml"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func parseSOAPResp(resp *http.Response, dest interface{}) {
-	typeName := reflect.TypeOf(dest).Name()
+	splitedName := strings.Split(reflect.TypeOf(dest).String(), ".")
+	typeName := splitedName[len(splitedName)-1]
 	d := xml.NewDecoder(resp.Body)
 	for t, _ := d.Token(); t != nil; t, _ = d.Token() {
 		switch start := t.(type) {

@@ -33,11 +33,11 @@ func NewKeyboardController(config *confstore.Config) *KeyboardController {
 	return &KeyboardController{profile: profile}
 }
 
-func (c *KeyboardController) CameraCommandsChan() <-chan camera.Command {
+func (c *KeyboardController) CameraCommandsChan() chan camera.Command {
 	return c.cameraCommands
 }
 
-func (c *KeyboardController) CamManagerCommandsChan() <-chan camera.Command {
+func (c *KeyboardController) CamManagerCommandsChan() chan camera.Command {
 	return c.camManagerCommands
 }
 
@@ -54,7 +54,9 @@ func (c *KeyboardController) Init() error {
 		return err
 	}
 	c.device = device
-
+	log.Println("Start controller listener")
+	c.camManagerCommands = make(chan camera.Command, 10)
+	c.cameraCommands = make(chan camera.Command, 10)
 	go c.startListener()
 	return nil
 }
@@ -68,6 +70,7 @@ func (c *KeyboardController) startListener() {
 			c.closeExecution()
 			return
 		}
+		log.Println("Readed from controller:", data)
 		c.dataToCommands(data)
 	}
 }
@@ -100,11 +103,13 @@ func (c *KeyboardController) dataToCommands(inputData []byte) {
 		}
 	}
 
-	c.cameraCommands <- camera.NewPTZMoveCommand(
+	command := camera.NewPTZMoveCommand(
 		getPTZMoveInDirection(c.profile.PanLeftKey, c.profile.PanRightKey, statusKeyByte, pressedKeys),
 		getPTZMoveInDirection(c.profile.TiltDownKey, c.profile.TiltUpKey, statusKeyByte, pressedKeys),
 		getPTZMoveInDirection(c.profile.ZoomOutKey, c.profile.ZoomInKey, statusKeyByte, pressedKeys),
 	)
+	log.Println("Controller: Build ", command)
+	c.cameraCommands <- command
 }
 
 func getPTZMoveInDirection(

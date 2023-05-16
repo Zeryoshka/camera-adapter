@@ -7,8 +7,8 @@ import (
 
 type Controller interface {
 	Init() error
-	CameraCommandsChan() <-chan camera.Command
-	CamManagerCommandsChan() <-chan camera.Command
+	CameraCommandsChan() chan camera.Command
+	CamManagerCommandsChan() chan camera.Command
 }
 
 func GetController(config *confstore.Config) Controller {
