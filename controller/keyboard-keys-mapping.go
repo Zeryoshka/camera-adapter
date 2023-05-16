@@ -1,4 +1,4 @@
-package reader
+package controller
 
 type KeyboardKey byte
 
@@ -31,4 +31,10 @@ const (
 	EightNumLockKeyboard KeyboardKey = 96
 	NineNumLockKeyboard  KeyboardKey = 97
 	ZeroNumLockKeyboard  KeyboardKey = 98
+)
+
+type StatusKeyKeyboardMask byte
+
+const (
+	RightControlKeyboardMask StatusKeyKeyboardMask = 0b00010000
 )

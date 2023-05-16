@@ -6,7 +6,7 @@ import (
 
 	"github.com/Zeryoshka/camera-adapter/camera"
 	"github.com/Zeryoshka/camera-adapter/confstore"
-	"github.com/Zeryoshka/camera-adapter/reader"
+	"github.com/Zeryoshka/camera-adapter/controller"
 )
 
 func main() {
@@ -15,17 +15,22 @@ func main() {
 	config := confstore.ParseConfigfile(*confpath)
 
 	manager := camera.NewCameraManager(config)
+	cam := manager.GetCamera()
 
-	reader := reader.GetReader(config)
-	inpCh, err := reader.GetReadChan()
+	controller := controller.GetController(config)
+	err := controller.Init()
 	if err != nil {
-		log.Fatalln("Can't get channel: ", err)
+		log.Fatalln("Can't init controller: ", err)
 	}
-	for readedData := range inpCh {
-		manager_commands, cam_commands := reader.DataToCommands(readedData)
-		log.Println("Got from reader: ", manager_commands, cam_commands, readedData)
-		manager.ExecuteCommands(manager_commands...)
-		cam := manager.GetCamera()
-		cam.ExecuteCommands(cam_commands...)
+
+	camManagerChan := controller.CamManagerCommandsChan()
+	camerChan := controller.CameraCommandsChan()
+	for {
+		select {
+		case command := <-camManagerChan:
+			manager.ExecuteCommand(command)
+		case command := <-camerChan:
+			cam.ExecuteCommand(command)
+		}
 	}
 }

@@ -22,10 +22,9 @@ func NewFileStore(confpath string) *Store {
 }
 
 type Camera struct {
-	Host      string
-	Login     string
-	Password  string
-	CameraKey string `yaml:"use_key"`
+	Host     string
+	Login    string
+	Password string
 }
 
 type ControlProfileConfig struct {
