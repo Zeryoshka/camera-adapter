@@ -1,5 +1,5 @@
 [Unit]
-Description="Upravlyator for cameras"
+Description="ConfAPI service for Upravlyator"
 After=multi-user.target
 
 [Service]
@@ -8,7 +8,7 @@ Group=root
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=/usr/local/bin/cam-upr --conf /home/salos/camera-adapter/conf.yaml
+ExecStart=/usr/local/bin/upr-conf-api --conf {path-tmpl}/conf.yaml
 
 [Install]
 WantedBy=multi-user.target
