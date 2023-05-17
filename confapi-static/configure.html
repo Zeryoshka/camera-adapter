@@ -4,17 +4,24 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Configurator</title>
 </head>
 <body>
-    <textarea id="conf-text"></textarea>
-    <button onclick="sendConfig()">Send solution</button>
-
+    <textarea id="editor" style="display:block"></textarea>
+    
+    <button onclick="sendConfig()">Send confiration</button>
+    <script src="/ace.js"></script>
     <script>
+        let editor = ace.edit("editor");
+        editor.session.setMode("ace/mode/yaml");
+        editor.setOptions({
+            maxLines: Infinity
+        });
+
         async function sendConfig() {
             let response = await fetch('/config', {
                 method: 'POST',
-                body: document.getElementById('conf-text').value
+                body: editor.getValue()
             });
             
             UpdateConfig()
@@ -23,7 +30,7 @@
         async function UpdateConfig() {
             let response = await fetch("/config")
             if (response.status == 200) {
-                document.getElementById('conf-text').value = await response.text()
+                editor.setValue(await response.text())
             }
         }
 
