@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"time"
 
 	"github.com/Zeryoshka/camera-adapter/camera"
 	"github.com/Zeryoshka/camera-adapter/confstore"
@@ -16,7 +15,6 @@ func main() {
 	config := confstore.ParseConfigfile(*confpath)
 
 	manager := camera.NewCameraManager(config)
-	cam := manager.GetCamera()
 
 	controller := controller.GetController(config)
 	err := controller.Init()
@@ -31,10 +29,7 @@ func main() {
 		case command := <-camManagerChan:
 			manager.ExecuteCommand(command)
 		case command := <-camerChan:
-			cam.ExecuteCommand(command)
-		default:
-			log.Println("camManagerChan:", len(camManagerChan), len(camerChan))
-			time.Sleep(100 * time.Millisecond)
+			manager.ExecuteCameraCommand(command)
 		}
 	}
 }

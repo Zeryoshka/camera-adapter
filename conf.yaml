@@ -2,13 +2,21 @@ cameras:
   - host: 172.18.191.94:80
     login: admin
     password: Supervisor
-  - host: 172.18.191.179:8080
-    login: admin
-    password: Supervisor
-  # - host: 172.18.191.86:80
-  #   use_key: 58
+    pan_speed: 0.5
+    tilt_speed: 0.5
+    zoom_speed: 0.5
+    timeout: 1000
+  # - host: 172.18.191.179:8080
   #   login: admin
   #   password: Supervisor
+  - host: 172.18.191.86:80
+    use_key: 58
+    login: admin
+    password: Supervisor
+    pan_speed: 0.5
+    tilt_speed: 0.5
+    zoom_speed: 0.5
+    timeout: 1000
   # - host: 172.18.191.85:80
   #   use_key: 59
   #   login: admin
@@ -51,4 +59,4 @@ control_profile:
     - 58
     - 59
     - 60
-    - 61
+    - 62

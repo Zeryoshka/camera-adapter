@@ -41,8 +41,8 @@ func (g *KeyboardProfileKeyGroup) PressedOneKey(
 	mask := byte(0b1)
 	if statusByte != 0 {
 		for {
-			keyTuple := g.statusKeyProfileMap[mask]
-			if keyTuple.key != nil && keyTuple.key.mask == mask {
+			keyTuple, ok := g.statusKeyProfileMap[mask]
+			if ok && keyTuple.key != nil && keyTuple.key.mask == mask {
 				return keyTuple.key, keyTuple.index
 			}
 			if mask == 0b10000000 {

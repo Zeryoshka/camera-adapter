@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"sync"
+	"time"
 
 	"github.com/Zeryoshka/camera-adapter/confstore"
 	"github.com/use-go/onvif"
@@ -17,11 +20,17 @@ func NewCameraManager(store *confstore.Config) *CameraManager {
 	cameras := make(map[uint]*Camera)
 
 	for i, cameraConf := range store.Cameras {
-		camera, err := NewCamera(onvif.DeviceParams{
-			Xaddr:    cameraConf.Host,
-			Username: cameraConf.Login,
-			Password: cameraConf.Password,
-		})
+		camera, err := NewCamera(
+			onvif.DeviceParams{
+				Xaddr:    cameraConf.Host,
+				Username: cameraConf.Login,
+				Password: cameraConf.Password,
+				HttpClient: &http.Client{
+					Timeout: time.Duration(cameraConf.Timeout) * time.Millisecond,
+				},
+			},
+			cameraConf,
+		)
 		if err != nil {
 			log.Println("Can't create camera with host:", cameraConf.Host, ", cause: ", err)
 		} else if !findFirst {
@@ -42,6 +51,7 @@ func NewCameraManager(store *confstore.Config) *CameraManager {
 }
 
 type CameraManager struct {
+	sync.RWMutex
 	cameras        map[uint]*Camera
 	curCameraIndex uint
 }
@@ -49,6 +59,12 @@ type CameraManager struct {
 func (m *CameraManager) GetCamera() *Camera {
 	log.Println("Use camera with cameraIndex: ", m.curCameraIndex)
 	return m.cameras[m.curCameraIndex]
+}
+
+func (m *CameraManager) ExecuteCameraCommand(command Command) error {
+	m.RLock()
+	defer m.RUnlock()
+	return m.GetCamera().ExecuteCommand(command)
 }
 
 func (m *CameraManager) ExecuteCommand(command Command) error {
@@ -60,13 +76,15 @@ func (m *CameraManager) ExecuteCommand(command Command) error {
 }
 
 func (m *CameraManager) executeSetDeviceCommand(command *SetDeviceCommand) error {
-	if m.curCameraIndex != command.CameraIndex {
+	if m.curCameraIndex == command.CameraIndex {
 		log.Printf("Nothing to switch in SetDevice(%d)", m.curCameraIndex)
 		return nil
 	}
 	if cameraPtr, ok := m.cameras[command.CameraIndex]; !ok || cameraPtr == nil {
 		return fmt.Errorf("incorrect CameraIndex(%d) in SetDeviceCommand or inactive camera", command.CameraIndex)
 	}
+	m.Lock()
+	defer m.Unlock()
 	err := m.cameras[m.curCameraIndex].Stop()
 	m.curCameraIndex = command.CameraIndex
 	log.Println("Executed command: ", command, " new index updated, cameraIndex: ", m.curCameraIndex)

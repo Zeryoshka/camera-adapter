@@ -22,9 +22,13 @@ func NewFileStore(confpath string) *Store {
 }
 
 type Camera struct {
-	Host     string
-	Login    string
-	Password string
+	Host      string
+	Login     string
+	Password  string
+	PanSpeed  float64 `yaml:"pan_speed"`
+	TiltSpeed float64 `yaml:"tilt_speed"`
+	ZoomSpeed float64 `yaml:"zoom_speed"`
+	Timeout   int
 }
 
 type ControlProfileConfig struct {

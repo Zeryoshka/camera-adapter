@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/Zeryoshka/camera-adapter/camera"
@@ -48,12 +49,21 @@ func (c *KeyboardController) closeExecution() {
 
 func (c *KeyboardController) Init() error {
 	devices := hid.Enumerate(0, 0)
-	device, err := devices[0].Open()
-	if err != nil {
-		log.Println("Can't open device, cause: ", err)
-		return err
+	if len(devices) == 0 {
+		log.Println("No devices")
 	}
-	c.device = device
+	for _, devInfo := range devices {
+		dev, err := devInfo.Open()
+		if err != nil {
+			log.Println("Can't open device, cause: ", err)
+		} else {
+			c.device = dev
+			break
+		}
+	}
+	if c.device == nil {
+		return fmt.Errorf("Can't open even one device")
+	}
 	log.Println("Start controller listener")
 	c.camManagerCommands = make(chan camera.Command, 10)
 	c.cameraCommands = make(chan camera.Command, 10)

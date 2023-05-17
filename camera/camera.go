@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/Zeryoshka/camera-adapter/confstore"
 	"github.com/use-go/onvif"
 	"github.com/use-go/onvif/media"
 	onvifTypes "github.com/use-go/onvif/xsd/onvif"
 )
 
-func NewCamera(deviceParams onvif.DeviceParams) (*Camera, error) {
+func NewCamera(deviceParams onvif.DeviceParams, cameraConf confstore.Camera) (*Camera, error) {
 	dev, err := onvif.NewDevice(deviceParams)
 	if err != nil {
 		log.Println("Error with device creation")
@@ -25,9 +26,9 @@ func NewCamera(deviceParams onvif.DeviceParams) (*Camera, error) {
 		dev:          dev,
 		profileToken: profileToken,
 		ptzParam: &CameraPTZParam{
-			PanSpeed:  0.5,
-			TiltSpeed: 0.5,
-			ZoomSpeed: 0.5,
+			PanSpeed:  cameraConf.PanSpeed,
+			TiltSpeed: cameraConf.TiltSpeed,
+			ZoomSpeed: cameraConf.ZoomSpeed,
 		},
 		presetStore: make(PresetStore),
 	}

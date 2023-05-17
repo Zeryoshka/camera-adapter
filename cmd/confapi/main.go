@@ -1,26 +1,59 @@
 package main
 
 import (
+	"flag"
+	"io"
+	"log"
 	"net/http"
-
-	"github.com/Zeryoshka/camera-adapter/confapi"
-	"github.com/gin-gonic/gin"
+	"os"
+	"strconv"
 )
 
-func main() {
-	router := gin.Default()
+type Config struct {
+	ServerPort uint
+}
 
-	api := confapi.NewAPI()
-	v1 := router.Group("api/v1")
-	{
-		v1.POST("/device", api.CreateDevice)
-		v1.GET("/device", api.GetDeviceList)
-	}
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
+func main() {
+	uprConfPath := flag.String("upr-conf", "", "path to local yaml config")
+	serverPort := flag.Int("port", 80, "port for conf-server")
+	flag.Parse()
+
+	staticServer := http.FileServer(http.Dir("./confapi-static/"))
+	http.Handle("/", staticServer)
+	http.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			w.WriteHeader(http.StatusOK)
+			f, err := os.Open(*uprConfPath)
+			if err != nil {
+				log.Println("can't read config with path:", uprConfPath, "; error:", err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			configData, _ := io.ReadAll(f)
+			w.Write(configData)
+		} else if r.Method == "POST" {
+			w.WriteHeader(http.StatusCreated)
+			w.Header().Add("Content-Type", "text/plain")
+			f, err := os.Create(*uprConfPath)
+			if err != nil {
+				log.Println("can't read config with path:", uprConfPath, "; error:", err)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			configData, _ := io.ReadAll(r.Body)
+			_, err = f.Write(configData)
+			if err != nil {
+				log.Println("can't write to file cause:", err)
+			}
+			err = f.Close()
+			if err != nil {
+				log.Println("can't close file cause:", err)
+			}
+
+		} else {
+			log.Println("Method:", r.Method)
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
 	})
 
-	router.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	err := http.ListenAndServe("0.0.0.0:"+strconv.Itoa(*serverPort), nil)
+	log.Fatal(err)
 }
