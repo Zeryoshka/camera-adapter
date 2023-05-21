@@ -1,0 +1,30 @@
+- name: Copy Upravlyator's code sources
+  ansible.builtin.git:
+    repo: {{ repo_link }}
+    dest: {{ project_root }}
+    single_branch: yes
+    version: master
+
+- name: Build Upravlaytor app
+  command:
+    chdir: {{ project_root }}
+    cmd: go build -o {{ upravlyator_path }} cmd/main.go
+
+- name: Build service for Upravlyator
+  ansible.builtin.template:
+    src: {{ project_root }}/services-tmpl/upravlyator.service.j2
+    dest: /etc/systemd/system/upravlyator.service
+
+- name: Build Upravlaytor-confapi app
+  command:
+    chdir: {{ project_root }}
+    cmd: go build -o {{ upravlyator_confapi_path }} cmd/confapi/main.go
+
+- name: Build service for Upravlaytor-confapi
+  ansible.builtin.template:
+    src: {{ project_root }}/services-tmpl/upravlyator-confapi.service.j2
+    dest: /etc/systemd/system/upravlyator-confapi.service
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true

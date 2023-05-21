@@ -8,7 +8,10 @@ Group=root
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=/usr/local/bin/upr-conf-api --conf {path-tmpl}/conf.yaml
+ExecStart=\
+    {{ upravlyator_confapi_path }} \
+        --upr-conf {{ project_root }}/conf.yaml \
+        --static {{ project_root }}/confapi-static/
 
 [Install]
 WantedBy=multi-user.target

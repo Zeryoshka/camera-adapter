@@ -1,0 +1,14 @@
+[Unit]
+Description="ConfAPI service for Upravlyator"
+After=multi-user.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/local/bin/upr-conf-api --conf /home/salos/camera-adapter/conf.yaml
+
+[Install]
+WantedBy=multi-user.target

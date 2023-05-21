@@ -15,10 +15,11 @@ type Config struct {
 
 func main() {
 	uprConfPath := flag.String("upr-conf", "", "path to local yaml config")
+	staticPath := flag.String("static", "./confapi-static/", "path to static")
 	serverPort := flag.Int("port", 80, "port for conf-server")
 	flag.Parse()
 
-	staticServer := http.FileServer(http.Dir("./confapi-static/"))
+	staticServer := http.FileServer(http.Dir(*staticPath))
 	http.Handle("/", staticServer)
 	http.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {

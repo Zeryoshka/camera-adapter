@@ -1,4 +1,18 @@
 cameras:
+  - host: 192.168.1.209:2000
+    login: admin
+    password: Supervisor
+    pan_speed: 10
+    tilt_speed: 0.5
+    zoom_speed: 0.5
+    timeout: 1000
+  - host: 192.168.1.117:81
+    login: admin
+    password: Supervisor
+    pan_speed: 0.5
+    tilt_speed: 4
+    zoom_speed: 1
+    timeout: 1000
   - host: 172.18.191.94:80
     login: admin
     password: Supervisor
@@ -40,23 +54,29 @@ control_profile:
   pan_right: 79
   tilt_up: 82
   tilt_down: 81
-  zoom_in: 87
-  zoom_out: 86
-  set_preset: m0b1
-  use_preset: 83
+  zoom_in: 73
+  zoom_out: 76
+  set_preset: 88
+  #use_preset: 83
   presets:
-    - 84
-    - 89
-    - 90
-    - 91
-    - 92
-    - 93
-    - 94
-    - 95
-    - 96
-    - 98
+    - 40
+    - 30
+    - 31
+    - 32
+    - 33
+    - 34
+    - 35
+    - 36
+    - 37
+    - 38
+    - 39
+    - 55
   choose_camera:
-    - 58
-    - 59
-    - 60
-    - 62
+    - 41
+    - 43
+    - 46
+    - 42
+    - 39
+    - 84
+    - 85
+    - 86
