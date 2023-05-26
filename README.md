@@ -82,12 +82,12 @@ cd camera-adapter
 
 Соберем оба сервиса и положим их в bin: (нужно повторять после каждого изменения кода)
 ```bash
-source service-dist.sh
+sh service-dist.sh
 ```
 
 Подготовим службы:
 ```bash
-source service-install.sh
+sh service-install.sh
 ```
 
 Запущенные службы:
