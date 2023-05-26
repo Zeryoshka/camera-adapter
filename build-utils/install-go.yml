@@ -1,0 +1,5 @@
+- hosts: all
+  roles:
+    - role: gantsign.golang
+      golang_gopath: '$HOME/workspace-go'
+      golang_vrsion: '1.20.4'
