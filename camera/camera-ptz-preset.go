@@ -81,9 +81,12 @@ func (c *Camera) initPresetStore() error {
 		return err
 	}
 
-	getPresetsResp := ptz.GetPresetsResponse{}
-	parseSOAPResp(resp, &getPresetsResp)
 	// error in lib Preset -> []Preset
+	type GetPresetsResponse struct {
+		Preset []onvifTypes.PTZPreset
+	}
+	getPresetsResp := GetPresetsResponse{}
+	parseSOAPResp(resp, &getPresetsResp)
 
 	c.presetStore = make(PresetStore)
 	presetCount := 0
