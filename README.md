@@ -62,11 +62,12 @@ ansible-galaxy install gantsign.golang  # скачать роль для уст�
 Подготовьте inventory-файл, в котором указано на какие машины нужно накатить Go. Сохраните адреса машин в файл с названием `inventory`
 Пример inventory:
 ```
+[all]
 192.168.0.1 ansible_connection=ssh  ansible_user=myuser ansible_password=super-secret
 ```
 Выполните плейбук:
 ```bash
-ansible-playbook ./buil_utils/install.go
+ansible-playbook -i inventory invrn./build_utils/install-go.yml
 ```
 
 Go установлен
@@ -81,12 +82,12 @@ cd camera-adapter
 
 Соберем оба сервиса и положим их в bin: (нужно повторять после каждого изменения кода)
 ```bash
-./buil_utils/service-dist.sh
+source service-dist.sh
 ```
 
 Подготовим службы:
 ```bash
-./buil_utils/service-install.sh
+source service-install.sh
 ```
 
 Запущенные службы:
