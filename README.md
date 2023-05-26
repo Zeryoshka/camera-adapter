@@ -49,3 +49,47 @@ cd rm camera-adapter
 # Полезные скрипты и утилиты
 В репозитории есть ansible-playbook для установки golang, предварительно надо подтянуть роль для него, сделать это можно так
 `ansible-galaxy install gantsign.golang`
+
+
+## Установка
+
+### 1. Установим Go
+Предлагаем простогй способ через ansible, на своей рабочей машине выполните следующие шаги:
+```bash
+pip3 install ansible  # установить ansible
+ansible-galaxy install gantsign.golang  # скачать роль для установки Go
+```
+Подготовьте inventory-файл, в котором указано на какие машины нужно накатить Go. Сохраните адреса машин в файл с названием `inventory`
+Пример inventory:
+```
+192.168.0.1 ansible_connection=ssh  ansible_user=myuser ansible_password=super-secret
+```
+Выполните плейбук:
+```bash
+ansible-playbook ./buil_utils/install.go
+```
+
+Go установлен
+
+### 2. Сборка сервиса
+Все следующие шаги выполняются уже на машине, куда ставится управлятор
+Выгрузить репозиторий (возможно придется авторизоваться)
+```bash
+git clone https://github.com/Zeryoshka/camera-adapter.git
+cd camera-adapter
+```
+
+Соберем оба сервиса и положим их в bin: (нужно повторять после каждого изменения кода)
+```bash
+./buil_utils/service-dist.sh
+```
+
+Подготовим службы:
+```bash
+./buil_utils/service-install.sh
+```
+
+Запущенные службы:
+```
+upravlyator upravlyator-confapi
+```

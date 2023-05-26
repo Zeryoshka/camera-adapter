@@ -9,9 +9,10 @@ Type=simple
 Restart=always
 RestartSec=1
 ExecStart=\
-    {{ upravlyator_confapi_path }} \
-        --upr-conf {{ project_root }}/conf.yaml \
-        --static {{ project_root }}/confapi-static/
+    /usr/local/bin/upr-conf-api \
+        --upr-conf {{ path-tmpl }}/conf.yaml \
+        --static {{ path-tmpl }}/confapi-static/ \
+        --port 81
 
 [Install]
 WantedBy=multi-user.target
