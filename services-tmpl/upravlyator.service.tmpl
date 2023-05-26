@@ -8,7 +8,7 @@ Group=root
 Type=simple
 Restart=always
 RestartSec=1
-ExecStart=/usr/local/bin/cam-upr --conf {{ path-tmpl }}/conf.yaml
+ExecStart=/usr/local/bin/cam-upr --conf {path-tmpl}/conf.yaml
 
 [Install]
 WantedBy=multi-user.target

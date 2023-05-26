@@ -10,8 +10,8 @@ Restart=always
 RestartSec=1
 ExecStart=\
     /usr/local/bin/upr-conf-api \
-        --upr-conf {{ path-tmpl }}/conf.yaml \
-        --static {{ path-tmpl }}/confapi-static/ \
+        --upr-conf {path-tmpl}/conf.yaml \
+        --static {path-tmpl}/confapi-static/ \
         --port 81
 
 [Install]
